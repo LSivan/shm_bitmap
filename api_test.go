@@ -18,6 +18,10 @@ func TestNew(t *testing.T) {
 			name: "test",
 			args: args{
 				appBucketCfg: map[uint32]config.Cfg{
+					// Store 30 ID's bit in per segment
+					// Total count of ID is 199=200-1
+					// So need 7 segments (199/30 ≈ 6.63 < 7)
+					// size of every segment is 240=30*8
 					appID: {
 						IDBegin:     1,
 						IDEnd:       200,
@@ -56,3 +60,18 @@ func TestNew(t *testing.T) {
 		})
 	}
 }
+
+/**
+$ ipcs -m
+
+------ Shared Memory Segments --------
+key        shmid      owner      perms      bytes      nattch     status
+0x00020000 2490379    root       666        240        0
+0x00020001 2523148    root       666        240        0
+0x00020002 2555917    root       666        240        0
+0x00020003 2588686    root       666        240        0
+0x00020004 2621455    root       666        240        0
+0x00020005 2654224    root       666        240        0
+0x00020006 2686993    root       666        240        0
+
+*/

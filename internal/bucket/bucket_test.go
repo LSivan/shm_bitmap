@@ -19,7 +19,7 @@ func TestNewAppBucket(t *testing.T) {
 			name: "test",
 			args: args{
 				appID: 1,
-				// Store 20 ID in per segment
+				// Store 20 ID's bit in per segment
 				// Total count of ID is 30=50-0
 				// So need 3 segments
 				// size of every segment is 80=20*4
