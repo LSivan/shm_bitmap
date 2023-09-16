@@ -102,13 +102,14 @@ type AppBucket struct {
 }
 
 func (ab *AppBucket) BucketIdx(id int64) int {
-	return int(id / int64(ab.cfg.BucketIdCnt))
+	v := id - ab.cfg.IDOffset
+	return int(v / int64(ab.cfg.BucketIdCnt))
 }
 
 func (ab *AppBucket) GetBit(id int64) (int64, error) {
 	bucketIdx := ab.BucketIdx(id)
 
-	if bucketIdx >= len(ab.buckets) {
+	if bucketIdx < 0 || bucketIdx >= len(ab.buckets) {
 		return 0, util.ErrInvalidBucketIndex
 	}
 	bucket := ab.buckets[bucketIdx]
@@ -117,8 +118,7 @@ func (ab *AppBucket) GetBit(id int64) (int64, error) {
 
 func (ab *AppBucket) SetBit(id, bit int64) error {
 	bucketIdx := ab.BucketIdx(id)
-
-	if bucketIdx >= len(ab.buckets) {
+	if bucketIdx < 0 || bucketIdx >= len(ab.buckets) {
 		return util.ErrInvalidBucketIndex
 	}
 

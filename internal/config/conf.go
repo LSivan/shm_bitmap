@@ -6,5 +6,6 @@ package config
 type Cfg struct {
 	BucketCnt   int    // numbers of bucket
 	BucketIdCnt uint32 // numbers of id in every bucket
-	BitSize     uint   // sizeof(bit). maybe 1,2,4,8
+	BitSize     uint   // sizeof(bit).
+	IDOffset    int64 // use to cal bucket index of ID
 }

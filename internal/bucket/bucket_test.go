@@ -22,6 +22,7 @@ func TestNewAppBucket(t *testing.T) {
 					BucketCnt:   1,
 					BucketIdCnt: 10,
 					BitSize:     2,
+					IDOffset:    15,
 				},
 			},
 		},
