@@ -132,14 +132,19 @@ func NewAppBucket(appID uint32, cfg config.Cfg) (*AppBucket, error) {
 		cfg:   cfg,
 	}
 
-	if ab.cfg.IDEnd <= ab.cfg.IDBegin {
+	if ab.cfg.IDBegin < 0 || ab.cfg.IDEnd <= ab.cfg.IDBegin {
 		return nil, util.ErrInvalidIDRange
 	}
 	if ab.cfg.BucketIdCnt <= 0 || ab.cfg.BucketIdCnt > util.MAX_BUCKET_ID_CNT {
 		return nil, util.ErrInvalidBucketIDCnt
 	}
 
-	bucketCnt := ab.cfg.IDEnd - ab.cfg.IDBegin
+	totalIDCnt := ab.cfg.IDEnd - ab.cfg.IDBegin + 1
+
+	bucketCnt := totalIDCnt / int64(ab.cfg.BucketIdCnt)
+	if totalIDCnt%int64(ab.cfg.BucketIdCnt) != 0 {
+		bucketCnt++
+	}
 
 	ab.buckets = make([]*Bucket, bucketCnt)
 
