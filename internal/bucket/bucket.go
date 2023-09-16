@@ -9,33 +9,35 @@ import (
 )
 
 type shmInfo struct {
-	key  string
+	//key  string
 	id   uintptr
-	data []interface{}
+	data []int64
 }
 
+// Bucket
+// manage a segment of shared memory.
 type Bucket struct {
 	shmInfo
-	appID uint64
+	master *AppBucket
 }
 
-func (b *Bucket) GenShmKey(bucketIdx int) (uintptr, error) {
+func (b *Bucket) GenShmKey(appID uint32, bucketIdx int) (uintptr, error) {
 	if bucketIdx >= util.MAX_BUCKET_INDEX {
 		return 0, util.ErrInvalidBucketIndex
 	}
 
-	shmKey := uintptr(b.appID<<util.BUCKET_SHIFT) + uintptr(bucketIdx)
+	shmKey := uintptr(appID<<util.BUCKET_SHIFT) + uintptr(bucketIdx)
 	return shmKey, nil
 }
 
-func (b *Bucket) GetAndCreate(bucketIdx int) (uintptr, error) {
-	shmKey, err := b.GenShmKey(bucketIdx)
+func (b *Bucket) GetAndCreate(appID uint32, bucketIdx int) (uintptr, error) {
+	shmKey, err := b.GenShmKey(appID, bucketIdx)
 	if err != nil {
 		return shmKey, err
 	}
 	shmId, err := shm.ShmGet(shmKey)
 	if err != nil {
-		shmId, err = shm.ShmCreate(shmKey, config.Config.BucketIdCnt*uint32(config.Config.BitSize))
+		shmId, err = shm.ShmCreate(shmKey, b.master.cfg.BucketIdCnt*uint32(b.master.cfg.BitSize))
 		if err != nil {
 			return shmId, err
 		}
@@ -45,8 +47,8 @@ func (b *Bucket) GetAndCreate(bucketIdx int) (uintptr, error) {
 			return shmId, err
 		}
 		slice := (*reflect.SliceHeader)(unsafe.Pointer(&b.data))
-		slice.Len = int(config.Config.BucketIdCnt)
-		slice.Cap = int(config.Config.BucketIdCnt)
+		slice.Len = int(b.master.cfg.BucketIdCnt)
+		slice.Cap = int(b.master.cfg.BucketIdCnt)
 		slice.Data = shmAddr
 		return shmId, nil
 	} else {
@@ -63,15 +65,15 @@ func (b *Bucket) GetAndCreate(bucketIdx int) (uintptr, error) {
 			return shmId, err
 		}
 		slice := (*reflect.SliceHeader)(unsafe.Pointer(&b.data))
-		slice.Len = int(config.Config.BucketIdCnt)
-		slice.Cap = int(config.Config.BucketIdCnt)
+		slice.Len = int(b.master.cfg.BucketIdCnt)
+		slice.Cap = int(b.master.cfg.BucketIdCnt)
 		slice.Data = shmAddr
 		return shmId, nil
 	}
 }
 
-func (b *Bucket) SetBit(id int64, bit uint64) error {
-	idx := id % int64(config.Config.BucketIdCnt)
+func (b *Bucket) SetBit(id, bit int64) error {
+	idx := id % int64(b.master.cfg.BucketIdCnt)
 	if len(b.data) <= 0 {
 		return util.ErrShmNotMap
 	}
@@ -82,13 +84,74 @@ func (b *Bucket) SetBit(id int64, bit uint64) error {
 	return nil
 }
 
-func (b *Bucket) GetBit(id int64) (interface{}, error) {
-	idx := id % int64(config.Config.BucketIdCnt)
+func (b *Bucket) GetBit(id int64) (int64, error) {
+	idx := id % int64(b.master.cfg.BucketIdCnt)
 	if len(b.data) <= 0 {
-		return nil, util.ErrShmNotMap
+		return 0, util.ErrShmNotMap
 	}
 	if idx >= int64(len(b.data)) {
-		return nil, util.ErrInvalidBucketIndex
+		return 0, util.ErrInvalidBucketIndex
 	}
 	return b.data[idx], nil
+}
+
+type AppBucket struct {
+	appId   uint32
+	buckets []*Bucket
+	cfg     config.Cfg
+}
+
+func (ab *AppBucket) BucketIdx(id int64) int {
+	return int(id / int64(ab.cfg.BucketIdCnt))
+}
+
+func (ab *AppBucket) GetBit(id int64) (int64, error) {
+	bucketIdx := ab.BucketIdx(id)
+
+	if bucketIdx >= len(ab.buckets) {
+		return 0, util.ErrInvalidBucketIndex
+	}
+	bucket := ab.buckets[bucketIdx]
+	return bucket.GetBit(id)
+}
+
+func (ab *AppBucket) SetBit(id, bit int64) error {
+	bucketIdx := ab.BucketIdx(id)
+
+	if bucketIdx >= len(ab.buckets) {
+		return util.ErrInvalidBucketIndex
+	}
+
+	bucket := ab.buckets[bucketIdx]
+	return bucket.SetBit(id, bit)
+}
+
+func NewAppBucket(appID uint32, cfg config.Cfg) (*AppBucket, error) {
+	ab := AppBucket{
+		appId: appID,
+		cfg:   cfg,
+	}
+
+	if ab.cfg.BucketCnt <= 0 {
+		return nil, util.ErrInvalidBucketCnt
+	}
+	if ab.cfg.BucketIdCnt <= 0 || ab.cfg.BucketIdCnt > util.MAX_BUCKET_ID_CNT {
+		return nil, util.ErrInvalidBucketIDCnt
+	}
+
+	ab.buckets = make([]*Bucket, ab.cfg.BucketCnt)
+
+	for i := 0; i < ab.cfg.BucketCnt; i++ {
+		var bucket Bucket
+
+		shmID, err := bucket.GetAndCreate(appID, i)
+		if err != nil {
+			return nil, err
+		}
+		bucket.id = shmID
+
+		ab.buckets[i] = &bucket
+	}
+
+	return &ab, nil
 }

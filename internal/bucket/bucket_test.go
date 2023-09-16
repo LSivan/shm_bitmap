@@ -1,34 +1,54 @@
 package bucket
 
-import "testing"
+import (
+	"github.com/LSivan/shm_bitmap/internal/config"
+	"testing"
+)
 
-func TestBucket_GetAndCreate(t *testing.T) {
-	type fields struct {
-		shmInfo shmInfo
-		appID   uint64
-	}
+func TestNewAppBucket(t *testing.T) {
 	type args struct {
-		bucketIdx int
+		appID uint32
+		cfg   config.Cfg
 	}
 	tests := []struct {
-		name    string
-		fields  fields
-		args    args
+		name string
+		args args
 	}{
 		{
-			name:    "test",
-			fields:  fields{},
-			args:    args{1},
+			name: "test",
+			args: args{
+				appID: 1,
+				cfg: config.Cfg{
+					BucketCnt:   1,
+					BucketIdCnt: 10,
+					BitSize:     2,
+				},
+			},
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			b := &Bucket{
-				shmInfo: tt.fields.shmInfo,
-				appID:   tt.fields.appID,
+			got, err := NewAppBucket(tt.args.appID, tt.args.cfg)
+			if err != nil {
+				t.Errorf("NewAppBucket() error = %v", err)
+				return
 			}
-			got, err := b.GetAndCreate(tt.args.bucketIdx)
-			t.Logf("GetAndCreate() got = %v, err = %v", got, err)
+
+			for i := 15; i < 25; i++ {
+				bit := 100 + i
+				err = got.SetBit(int64(i), int64(bit))
+				if err != nil {
+					t.Errorf("got.SetBit(%d,%d) error = %v", i, bit, err)
+					return
+				}
+
+				t.Logf("%+v \n", got.buckets[got.BucketIdx(int64(i))].data)
+
+				v, e := got.GetBit(int64(i))
+				t.Logf("b.GetBit(%d) got = %v, err = %v \n", i, v, e)
+			}
+
 		})
 	}
 }
