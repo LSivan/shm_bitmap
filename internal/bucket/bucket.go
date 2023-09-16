@@ -102,7 +102,7 @@ type AppBucket struct {
 }
 
 func (ab *AppBucket) BucketIdx(id int64) int {
-	v := id - ab.cfg.IDOffset
+	v := id - ab.cfg.IDBegin
 	return int(v / int64(ab.cfg.BucketIdCnt))
 }
 
@@ -132,16 +132,18 @@ func NewAppBucket(appID uint32, cfg config.Cfg) (*AppBucket, error) {
 		cfg:   cfg,
 	}
 
-	if ab.cfg.BucketCnt <= 0 {
-		return nil, util.ErrInvalidBucketCnt
+	if ab.cfg.IDEnd <= ab.cfg.IDBegin {
+		return nil, util.ErrInvalidIDRange
 	}
 	if ab.cfg.BucketIdCnt <= 0 || ab.cfg.BucketIdCnt > util.MAX_BUCKET_ID_CNT {
 		return nil, util.ErrInvalidBucketIDCnt
 	}
 
-	ab.buckets = make([]*Bucket, ab.cfg.BucketCnt)
+	bucketCnt := ab.cfg.IDEnd - ab.cfg.IDBegin
 
-	for i := 0; i < ab.cfg.BucketCnt; i++ {
+	ab.buckets = make([]*Bucket, bucketCnt)
+
+	for i := 0; int64(i) < bucketCnt; i++ {
 		var bucket = Bucket{
 			master: &ab,
 		}

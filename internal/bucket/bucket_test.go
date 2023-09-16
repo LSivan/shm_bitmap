@@ -19,10 +19,10 @@ func TestNewAppBucket(t *testing.T) {
 			args: args{
 				appID: 1,
 				cfg: config.Cfg{
-					BucketCnt:   1,
-					BucketIdCnt: 10,
-					BitSize:     2,
-					IDOffset:    15,
+					IDBegin:     0,
+					IDEnd:       50,
+					BucketIdCnt: 20,
+					BitSize:     4,
 				},
 			},
 		},
