@@ -142,7 +142,9 @@ func NewAppBucket(appID uint32, cfg config.Cfg) (*AppBucket, error) {
 	ab.buckets = make([]*Bucket, ab.cfg.BucketCnt)
 
 	for i := 0; i < ab.cfg.BucketCnt; i++ {
-		var bucket Bucket
+		var bucket = Bucket{
+			master: &ab,
+		}
 
 		shmID, err := bucket.GetAndCreate(appID, i)
 		if err != nil {
