@@ -27,7 +27,7 @@ func TestNewAppBucket(t *testing.T) {
 					IDBegin:     0,
 					IDEnd:       50,
 					BucketIdCnt: 20,
-					BitSize:     4,
+					ByteSize:    4,
 				},
 			},
 		},

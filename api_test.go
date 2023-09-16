@@ -26,7 +26,7 @@ func TestNew(t *testing.T) {
 						IDBegin:     1,
 						IDEnd:       200,
 						BucketIdCnt: 30,
-						BitSize:     8,
+						ByteSize:    8,
 					},
 				},
 			},

@@ -37,7 +37,7 @@ func (b *Bucket) GetAndCreate(appID uint32, bucketIdx int) (uintptr, error) {
 	}
 	shmId, err := shm.ShmGet(shmKey)
 	if err != nil {
-		shmId, err = shm.ShmCreate(shmKey, b.master.cfg.BucketIdCnt*uint32(b.master.cfg.BitSize))
+		shmId, err = shm.ShmCreate(shmKey, b.master.cfg.BucketIdCnt*uint32(b.master.cfg.ByteSize))
 		if err != nil {
 			return shmId, err
 		}
