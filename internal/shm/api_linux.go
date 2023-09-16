@@ -85,5 +85,5 @@ func ShmGet(shmKey uintptr) (uintptr, error) {
 	return shmid, nil
 }
 
-// Some blog:
+// reference:
 //  https://my.oschina.net/tenghui0425/blog/1118882

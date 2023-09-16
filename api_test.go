@@ -57,6 +57,9 @@ func TestNew(t *testing.T) {
 				t.Logf("got.Get(%d, %d) res=%d \n", appID, i, res)
 			}
 
+			ids := []int64{1, 15, 29, 33, 89}
+			mapBit, err := got.BatchGet(appID, ids)
+			t.Logf("got.BatchGet((%d, %v) res=%d err=%v \n", appID, ids, mapBit, err)
 		})
 	}
 }

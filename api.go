@@ -9,6 +9,7 @@ import (
 type BitMapApi interface {
 	Set(appID uint32, id, bit int64) error
 	Get(appID uint32, id int64) (int64, error)
+	BatchGet(appID uint32, ids []int64) (map[int64]int64, error)
 }
 
 type mgr struct {
@@ -38,6 +39,24 @@ func (m *mgr) Get(appID uint32, id int64) (int64, error) {
 	}
 
 	return ab.GetBit(id)
+}
+
+func (m *mgr) BatchGet(appID uint32, ids []int64) (map[int64]int64, error) {
+	ab, err := m.getAppBucket(appID)
+	if err != nil {
+		return map[int64]int64{}, err
+	}
+
+	res := make(map[int64]int64, len(ids))
+
+	for _, id := range ids {
+		bit, err := ab.GetBit(id)
+		if err != nil {
+			return res, err
+		}
+		res[id] = bit
+	}
+	return res, nil
 }
 
 func New(appBucketCfg map[uint32]config.Cfg) (BitMapApi, error) {
