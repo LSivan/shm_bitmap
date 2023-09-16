@@ -19,9 +19,10 @@ func TestNew(t *testing.T) {
 			args: args{
 				appBucketCfg: map[uint32]config.Cfg{
 					appID: {
-						BucketCnt:   5,
-						BucketIdCnt: 20,
-						BitSize:     4,
+						IDBegin:     1,
+						IDEnd:       200,
+						BucketIdCnt: 30,
+						BitSize:     8,
 					},
 				},
 			},

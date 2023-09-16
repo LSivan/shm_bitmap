@@ -1,8 +1,9 @@
 package bucket
 
 import (
-	"github.com/LSivan/shm_bitmap/internal/config"
 	"testing"
+
+	"github.com/LSivan/shm_bitmap/internal/config"
 )
 
 func TestNewAppBucket(t *testing.T) {
@@ -18,6 +19,10 @@ func TestNewAppBucket(t *testing.T) {
 			name: "test",
 			args: args{
 				appID: 1,
+				// Store 20 ID in per segment
+				// Total count of ID is 30=50-0
+				// So need 3 segments
+				// size of every segment is 80=20*4
 				cfg: config.Cfg{
 					IDBegin:     0,
 					IDEnd:       50,
@@ -53,3 +58,14 @@ func TestNewAppBucket(t *testing.T) {
 		})
 	}
 }
+
+/**
+
+$ ipcs -m
+------ Shared Memory Segments --------
+key        shmid      owner      perms      bytes      nattch     status
+0x00010000 2392075    root       666        80         0
+0x00010001 2424844    root       666        80         0
+0x00010002 2457613    root       666        80         0
+
+*/
